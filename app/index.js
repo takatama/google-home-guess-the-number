@@ -64,22 +64,39 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     function welcomeHandler (app) {
         const answer = getRandomDigits(NUM_DIGITS);
         console.log(answer);
-        app.setContext(GUESS_CONTEXT, 99, {answer: answer});
+        app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: 1});
         //app.ask('Please Guess my 3 digits.');
-        app.ask('私が考えた3桁の数字を当ててください。');
+        app.ask('私が考えた' + NUM_DIGITS + '桁の数字を当ててください。');
+    }
+
+    function isValidNumber (number) {
+        if (number.length !== NUM_DIGITS) {
+            return false;
+        }
+        for (let i = 0; i < number.length; i++) {
+            if (typeof parseInt(number[i], 10) !== 'number') {
+                return false;
+            }
+        }
+        return true;
     }
 
     function numberHandler (app) {
         const number = app.getArgument('number');
-        const input = ('0000000000' + number).slice(-1 * NUM_DIGITS);
-        const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
-        console.log(answer, input);
-        const hint = getHint(answer, input.split('').map(i => {return parseInt(i, 10)}));
-        if (hint.homeruns === 3) {
-            // app.tell('You wins!');
-            app.tell('正解です！');
+        if (!isValidNumber(number)) {
+            app.ask(NUM_DIGITS + '桁の数字でお願いします。');
             return;
         }
+        const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
+        console.log(answer, number);
+        const count = app.getContextArgument(GUESS_CONTEXT, 'count').value;
+        const hint = getHint(answer, number.split('').map(i => {return parseInt(i, 10)}));
+        if (hint.homeruns === 3) {
+            // app.tell('You wins!');
+            app.tell('正解です！' + count + '回目で正解しました。');
+            return;
+        }
+        app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: count + 1});
         app.ask(getSpeech(hint));
     }
 
