@@ -1,3 +1,5 @@
+// This software includes the work that is distributed in the Apache License 2.0
+
 exports.getRandomDigits = getRandomDigits;
 exports.getHint = getHint;
 
@@ -42,4 +44,24 @@ function getHint(answer, input) {
     };
 }
 
+process.env.DEBUG = 'actions-on-google:*';
+const { DialogflowApp } = require('actions-on-google');
+const functions = require('firebase-functions');
+
+exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
+    const app = new DialogflowApp({request, response});
+    console.log('Request headers: ' + JSON.stringify(request.headers));
+    console.log('Request body: ' + JSON.stringify(request.body));
+
+    // Fulfill action business logic
+    function responseHandler (app) {
+        // Complete your fulfillment logic and send a response
+        app.tell('Hello, World!');
+    }
+
+    const actionMap = new Map();
+    actionMap.set('input.welcome', responseHandler);
+
+    app.handleRequest(actionMap);
+});
 
