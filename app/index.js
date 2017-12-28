@@ -20,16 +20,16 @@ function getRandomDigits(numDigits) {
 }
 
 function getHint(answer, input) {
-    const countStrikes = function(answer, input) {
+    const countHomeruns = function(answer, input) {
        let count = 0;
         for (let i = 0; i < answer.length; i++) {
             if (answer[i] === input[i]) {
-            	count += 1;
+                count += 1;
             }
         }
         return count;
     };
-    const countBalls = function (answer, input) {
+    const countHits = function (answer, input) {
         let count = 0;
         for (let i = 0; i < answer.length; i++) {
             if (answer[i] !== input[i] && input.includes(answer[i])) {
@@ -39,12 +39,17 @@ function getHint(answer, input) {
         return count;
     }
     return {
-        strikes: countStrikes(answer, input),
-        balls: countBalls(answer, input)
+        homeruns: countHomeruns(answer, input),
+        hits: countHits(answer, input)
     };
 }
 
-process.env.DEBUG = 'actions-on-google:*';
+function getSpeech(hint) {
+//    return hint.homeruns + ' homeruns, ' + hint.hits + ' hits';
+    return hint.homeruns + ' ホームラン、' + hint.hits + ' ヒットです。';
+}
+
+//process.env.DEBUG = 'actions-on-google:*';
 const { DialogflowApp } = require('actions-on-google');
 const functions = require('firebase-functions');
 
@@ -52,16 +57,40 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     const app = new DialogflowApp({request, response});
     console.log('Request headers: ' + JSON.stringify(request.headers));
     console.log('Request body: ' + JSON.stringify(request.body));
+    const GUESS_CONTEXT = 'guess';
 
     // Fulfill action business logic
-    function responseHandler (app) {
-        // Complete your fulfillment logic and send a response
-        app.tell('Hello, World!');
+    function welcomeHandler (app) {
+        const answer = getRandomDigits(3);
+        console.log(answer);
+        app.setContext(GUESS_CONTEXT, 99, {answer: answer});
+        //app.ask('Please Guess my 3 digits.');
+        app.ask('私が考えた3桁の数字を当ててください。');
+    }
+
+    function numberHandler (app) {
+        const input = app.getArgument('number').split('');
+        const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
+        console.log(answer, input);
+        const hint = getHint(answer, input.map(i => {return parseInt(i, 10)}));
+        if (hint.homeruns === 3) {
+            // app.tell('You wins!');
+            app.tell('正解です！');
+            return;
+        }
+        app.ask(getSpeech(hint));
+    }
+
+    function stopHander (app) {
+        const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
+        //app.tell('The answer is ' + answer);
+        app.tell('正解は' + answer.join('') + 'です。');
     }
 
     const actionMap = new Map();
-    actionMap.set('input.welcome', responseHandler);
-
+    actionMap.set('input.welcome', welcomeHandler);
+    actionMap.set('input.number', numberHandler);
+    actionMap.set('input.stop', stopHander);
+    
     app.handleRequest(actionMap);
 });
-
