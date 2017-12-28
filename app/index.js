@@ -58,10 +58,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     console.log('Request headers: ' + JSON.stringify(request.headers));
     console.log('Request body: ' + JSON.stringify(request.body));
     const GUESS_CONTEXT = 'guess';
+    const NUM_DIGITS = 3;
 
     // Fulfill action business logic
     function welcomeHandler (app) {
-        const answer = getRandomDigits(3);
+        const answer = getRandomDigits(NUM_DIGITS);
         console.log(answer);
         app.setContext(GUESS_CONTEXT, 99, {answer: answer});
         //app.ask('Please Guess my 3 digits.');
@@ -69,10 +70,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function numberHandler (app) {
-        const input = app.getArgument('number').split('');
+        const number = app.getArgument('number');
+        const input = ('0000000000' + number).slice(-1 * NUM_DIGITS);
         const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
         console.log(answer, input);
-        const hint = getHint(answer, input.map(i => {return parseInt(i, 10)}));
+        const hint = getHint(answer, input.split('').map(i => {return parseInt(i, 10)}));
         if (hint.homeruns === 3) {
             // app.tell('You wins!');
             app.tell('正解です！');
