@@ -1,0 +1,26 @@
+{
+  "name": "google-home-number-match",
+  "version": "1.0.0",
+  "description": "A number match game for guessing 3 numbers.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/takatama/google-home-number-match.git"
+  },
+  "keywords": [
+    "google-home",
+    "game"
+  ],
+  "author": "Hirokazu Takatama",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/takatama/google-home-number-match/issues"
+  },
+  "homepage": "https://github.com/takatama/google-home-number-match#readme",
+  "devDependencies": {
+    "mocha": "^4.0.1"
+  }
+}
