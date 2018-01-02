@@ -44,11 +44,6 @@ function getHint(answer, input) {
     };
 }
 
-function getSpeech(hint) {
-//    return hint.homeruns + ' homeruns, ' + hint.hits + ' hits';
-    return hint.homeruns + ' ホームラン、' + hint.hits + ' ヒットです。';
-}
-
 //process.env.DEBUG = 'actions-on-google:*';
 const { DialogflowApp } = require('actions-on-google');
 const functions = require('firebase-functions');
@@ -58,19 +53,69 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     console.log('Request headers: ' + JSON.stringify(request.headers));
     console.log('Request body: ' + JSON.stringify(request.body));
     const GUESS_CONTEXT = 'guess';
-    const NUM_DIGITS = 3;
+    const DEFAULT_NUM_DEIGITS = 3;
+    const lang = app.getUserLocale().split('-')[0];
+
+    const messages = {
+        'start': {
+            'en': 'Guess the $numDigits digit number.',
+            'ja': '私が考えた $numDigits 桁の数字を当ててください。'
+        },
+        'invalid': {
+            'en': 'Please say $numDigits digit number.',
+            'ja':  '$numDigits 桁の数字でお願いします。'
+        },
+        'hint': {
+            'en': '$homeruns homeruns, $hits hits.',
+            'ja': '$homeruns ホームラン、$hits ヒットです。'
+        },
+        'win': {
+            'en': 'You wins at $count trials.',
+            'ja': '正解です！ $count 回目で正解しました。'
+        },
+        'answer': {
+            'en': 'The answer is $answer.',
+            'ja': '正解は $answer です。'
+        },
+        'noKey': {
+            'en': 'No message key $key.',
+            'ja': 'メッセージキー $key がありません。'
+        },
+        'invalidNumDigits': {
+            'en': 'Invalid digit number. ' + DEFAULT_NUM_DEIGITS + ' digit number is used.',
+            'ja': '不正な桁数です。' + DEFAULT_NUM_DEIGITS + ' 桁ではじめます。'
+        }
+    };
+
+    function i18n(lang, key, args) {
+        const expand = function (message, args) {
+            let m = message;
+            if (args) {
+                for (let arg in args) {
+                    m = m.replace('$' + arg, args[arg]);
+                }
+            }
+            return m;
+        };
+        if (lang !== 'ja') {
+            lang = 'en';
+        }
+        if (!(key in messages)) {
+            return expand(messages['noKey'][lang], {key: key});
+        }
+        return expand(messages[key][lang], args);
+    }
 
     // Fulfill action business logic
     function welcomeHandler (app) {
-        const answer = getRandomDigits(NUM_DIGITS);
-        console.log(answer);
-        app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: 1});
-        //app.ask('Please Guess my 3 digits.');
-        app.ask('私が考えた' + NUM_DIGITS + '桁の数字を当ててください。');
+        const answer = getRandomDigits(DEFAULT_NUM_DEIGITS);
+        console.log('answer', answer);
+        app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: 1, numDigits: DEFAULT_NUM_DEIGITS});
+        app.ask(i18n(lang, 'start', {numDigits: DEFAULT_NUM_DEIGITS}));
     }
 
-    function isValidNumber (number) {
-        if (number.length !== NUM_DIGITS) {
+    function isValidNumber (numDigits, number) {
+        if (number.length !== numDigits) {
             return false;
         }
         for (let i = 0; i < number.length; i++) {
@@ -83,33 +128,46 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function numberHandler (app) {
         const number = app.getArgument('number');
-        if (!isValidNumber(number)) {
-            app.ask(NUM_DIGITS + '桁の数字でお願いします。');
+        const numDigits = app.getContextArgument(GUESS_CONTEXT, 'numDigits').value;
+        if (!isValidNumber(numDigits, number)) {
+            app.ask(i18n(lang, 'invalid', {numDigits: numDigits}));
             return;
         }
         const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
         console.log(answer, number);
         const count = app.getContextArgument(GUESS_CONTEXT, 'count').value;
         const hint = getHint(answer, number.split('').map(i => {return parseInt(i, 10)}));
-        if (hint.homeruns === 3) {
-            // app.tell('You wins!');
-            app.tell('正解です！' + count + '回目で正解しました。');
+        if (hint.homeruns === numDigits) {
+            app.tell(i18n(lang, 'win', {count: count}));
             return;
         }
-        app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: count + 1});
-        app.ask(getSpeech(hint));
+        app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: count + 1, numDigits: numDigits});
+        app.ask(i18n(lang, 'hint', {homeruns: hint.homeruns, hits: hint.hits}));
     }
 
-    function stopHander (app) {
+    function stopHandler (app) {
         const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
-        //app.tell('The answer is ' + answer);
-        app.tell('正解は' + answer.join('') + 'です。');
+        app.tell(i18n(lang, 'answer', {answer: answer.join('')}));
+    }
+
+    function numDigitsHandler (app) {
+        let invalidNumDigits = '';
+        let numDigits = parseInt(app.getArgument('numDigits'), 10);
+        if (numDigits < 1 || 9 < numDigits) {
+            numDigits = DEFAULT_NUM_DEIGITS;
+            invalidNumDigits = i18n(lang, 'invalidNumDigits');
+        }
+        let answer = getRandomDigits(numDigits);
+        console.log(numDigits, answer);
+        app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: 1, numDigits: numDigits});
+        app.ask(invalidNumDigits + i18n(lang, 'start', {numDigits: numDigits}));
     }
 
     const actionMap = new Map();
     actionMap.set('input.welcome', welcomeHandler);
     actionMap.set('input.number', numberHandler);
-    actionMap.set('input.stop', stopHander);
+    actionMap.set('input.stop', stopHandler);
+    actionMap.set('input.numDigits', numDigitsHandler);
     
     app.handleRequest(actionMap);
 });
