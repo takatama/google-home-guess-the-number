@@ -1,5 +1,5 @@
 {
-  "name": "google-home-number-match",
+  "name": "google-home-guess-the-number",
   "version": "1.0.0",
   "description": "A number match game for guessing 3 numbers.",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/takatama/google-home-number-match.git"
+    "url": "git+https://github.com/takatama/google-home-guess-the-number.git"
   },
   "keywords": [
     "google-home",
@@ -17,9 +17,9 @@
   "author": "Hirokazu Takatama",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/takatama/google-home-number-match/issues"
+    "url": "https://github.com/takatama/google-home-guess-the-number/issues"
   },
-  "homepage": "https://github.com/takatama/google-home-number-match#readme",
+  "homepage": "https://github.com/takatama/google-home-guess-the-number#readme",
   "devDependencies": {
     "mocha": "^4.0.1"
   },
