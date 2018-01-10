@@ -135,7 +135,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     }
 
     function numberHandler (app) {
-        const number = app.getArgument('number');
+        const number = app.getArgument('number').replace(/\s/g, '');
         const numDigits = app.getContextArgument(GUESS_CONTEXT, 'numDigits').value;
         if (!isValidNumber(numDigits, number)) {
             app.ask(i18n(lang, 'invalid', {numDigits: numDigits}));
