@@ -58,32 +58,36 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     const messages = {
         'start': {
-            'en': 'Guess the $numDigits digit number.',
+            'en': 'Guess the $numDigits digit number. ',
             'ja': '私が考えた $numDigits 桁の数字を当ててください。'
         },
         'invalid': {
-            'en': 'Please say $numDigits digit number.',
+            'en': 'Please say $numDigits digit number. ',
             'ja':  '$numDigits 桁の数字でお願いします。'
         },
         'hint': {
-            'en': '$homeruns homeruns, $hits hits.',
+            'en': '$homeruns homeruns, $hits hits. ',
             'ja': '$homeruns ホームラン、$hits ヒットです。'
         },
         'win': {
-            'en': 'You wins at $count trials.',
+            'en': 'You wins at $count trials. ',
             'ja': '正解です！ $count 回目で正解しました。'
         },
         'answer': {
-            'en': 'The answer is $answer.',
+            'en': 'The answer is $answer. ',
             'ja': '正解は $answer です。'
         },
         'noKey': {
-            'en': 'No message key $key.',
+            'en': 'No message key $key. ',
             'ja': 'メッセージキー $key がありません。'
         },
         'invalidNumDigits': {
-            'en': 'Invalid digit number. ' + DEFAULT_NUM_DEIGITS + ' digit number is used.',
+            'en': 'Invalid digit number. ' + DEFAULT_NUM_DEIGITS + ' digit number is used. ',
             'ja': '不正な桁数です。' + DEFAULT_NUM_DEIGITS + ' 桁ではじめます。'
+        },
+        'help': {
+            'en': 'Each digit should be different. If you give me the number, I will give you a hint. If a digit and its position are correct, it will be a homerun. If a digit is correct but its position is wrong, it will be a hit. ',
+            'ja': '数字は0から9で、重ならないように使います。あなたが数字を答えると、私はヒントを出します。桁も数字もあっている場合はホームラン、桁は違うけれど数字が同じならヒットです。'
         }
     };
 
@@ -111,7 +115,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         const answer = getRandomDigits(DEFAULT_NUM_DEIGITS);
         console.log('answer', answer);
         app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: 1, numDigits: DEFAULT_NUM_DEIGITS});
-        app.ask(i18n(lang, 'start', {numDigits: DEFAULT_NUM_DEIGITS}));
+        let speech = i18n(lang, 'start', {numDigits: DEFAULT_NUM_DEIGITS});
+        if (!app.getLastSeen()) {
+            speech += i18n(lang, 'help');
+        }
+        app.ask(speech);
     }
 
     function isValidNumber (numDigits, number) {
@@ -163,11 +171,17 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         app.ask(invalidNumDigits + i18n(lang, 'start', {numDigits: numDigits}));
     }
 
+    function helpHandler (app) {
+        let speech = i18n(lang, 'start', {numDigits: DEFAULT_NUM_DEIGITS}) + i18n(lang, 'help');
+        app.ask(speech);
+    }
+
     const actionMap = new Map();
     actionMap.set('input.welcome', welcomeHandler);
     actionMap.set('input.number', numberHandler);
     actionMap.set('input.stop', stopHandler);
     actionMap.set('input.numDigits', numDigitsHandler);
+    actionMap.set('input.help', helpHandler);
     
     app.handleRequest(actionMap);
 });
