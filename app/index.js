@@ -138,8 +138,28 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         return true;
     }
 
+    const escapeNumber = (number) => {
+        if (lang === 'ja') {
+            return number.replace(/\s/g, '')
+                .replace(/一/g, '1')
+                .replace(/に/g, '2')
+                .replace(/二/g, '2')
+                .replace(/さん/g, '3')
+                .replace(/三/g, '3')
+                .replace(/c/g, '4')
+                .replace(/四/g, '4')
+                .replace(/号/g, '5')
+                .replace(/五/g, '5')　
+                .replace(/六/g, '6')
+                .replace(/七/g, '7')
+                .replace(/八/g, '8')
+                .replace(/九/g, '9');
+        }
+        return number.replace(/\s/g, '');
+    };
+
     function numberHandler (app) {
-        const number = app.getArgument('number').replace(/\s/g, '');
+        const number = escapeNumber(app.getArgument('number'));
         const context = app.getContext(GUESS_CONTEXT);
         if (!context) {
             console.error(app.getUserLocale() + ' number: ', number);
@@ -148,6 +168,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         }
         const numDigits = context.parameters.numDigits;
         if (!isValidNumber(numDigits, number)) {
+            console.error(app.getUserLocale() + ' numDigits: ' + numDigits + ', number: ' + number);
             app.ask(i18n(lang, 'invalid', {numDigits: numDigits}));
             return;
         }
