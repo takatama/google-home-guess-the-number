@@ -87,7 +87,11 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         },
         'help': {
             'en': 'Each digit should be different. If you give me the number, I will give you a hint. If a digit and its position are correct, it will be a homerun. If a digit is correct but its position is wrong, it will be a hit. ',
-            'ja': '数字は0から9で、重ならないように使います。あなたが数字を答えると、私はヒントを出します。桁も数字もあっている場合はホームラン、桁は違うけれど数字が同じならヒットです。'
+            'ja': '数字は0から9で、同じ数字は含みません。あなたが数字を答えると、私はヒントを出します。数字と桁の位置の両方があっている場合はホームラン、数字は同じで桁の位置が違う場合はヒットです。'
+        },
+        'sorry': {
+            'en': 'Sorry. I can not hear well.',
+            'ja': 'すみません。よく聞き取れませんでした。'
         }
     };
 
@@ -113,7 +117,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     // Fulfill action business logic
     function welcomeHandler (app) {
         const answer = getRandomDigits(DEFAULT_NUM_DEIGITS);
-        console.log('answer', answer);
+        console.log('answer: ' + answer);
         app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: 1, numDigits: DEFAULT_NUM_DEIGITS});
         let speech = i18n(lang, 'start', {numDigits: DEFAULT_NUM_DEIGITS});
         if (!app.getLastSeen()) {
@@ -136,13 +140,19 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     function numberHandler (app) {
         const number = app.getArgument('number').replace(/\s/g, '');
-        const numDigits = app.getContextArgument(GUESS_CONTEXT, 'numDigits').value;
+        const context = app.getContext(GUESS_CONTEXT);
+        if (!context) {
+            console.error(app.getUserLocale() + ' number: ', number);
+            app.ask(i18n(lang, 'sorry') + i18n(lang, 'start', {numDigits: DEFAULT_NUM_DEIGITS}));
+            return;
+        }
+        const numDigits = context.parameters.numDigits;
         if (!isValidNumber(numDigits, number)) {
             app.ask(i18n(lang, 'invalid', {numDigits: numDigits}));
             return;
         }
         const answer = app.getContextArgument(GUESS_CONTEXT, 'answer').value;
-        console.log(answer, number);
+        console.log(app.getUserLocale() + ' answer: ' + answer + ', number: ' + number);
         const count = app.getContextArgument(GUESS_CONTEXT, 'count').value;
         const hint = getHint(answer, number.split('').map(i => {return parseInt(i, 10)}));
         if (hint.homeruns === numDigits) {
@@ -166,7 +176,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
             invalidNumDigits = i18n(lang, 'invalidNumDigits');
         }
         let answer = getRandomDigits(numDigits);
-        console.log(numDigits, answer);
+        console.log('numDigits: ' + numDigits + ', answer: ' + answer);
         app.setContext(GUESS_CONTEXT, 99, {answer: answer, count: 1, numDigits: numDigits});
         app.ask(invalidNumDigits + i18n(lang, 'start', {numDigits: numDigits}));
     }
