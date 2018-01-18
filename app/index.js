@@ -140,7 +140,7 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
 
     const escapeNumber = (number) => {
         if (lang === 'ja') {
-            return number.replace(/\s/g, '')
+            return number.replace(/\s/g, '').replace(/と/g, '')
                 .replace(/一/g, '1')
                 .replace(/に/g, '2')
                 .replace(/二/g, '2')
@@ -151,9 +151,15 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 .replace(/号/g, '5')
                 .replace(/五/g, '5')　
                 .replace(/六/g, '6')
+                .replace(/ろく/g, '6')
+                .replace(/ロック/g, '6')
                 .replace(/七/g, '7')
+                .replace(/しち/g, '7')
                 .replace(/八/g, '8')
-                .replace(/九/g, '9');
+                .replace(/はち/g, '8')
+                .replace(/九/g, '9')
+                .replace(/Q/g, '9')
+                .replace(/級/g, '9');
         }
         return number.replace(/\s/g, '');
     };
@@ -162,13 +168,13 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
         const number = escapeNumber(app.getArgument('number'));
         const context = app.getContext(GUESS_CONTEXT);
         if (!context) {
-            console.error(app.getUserLocale() + ' number: ', number);
+            console.error('numberHandler: No context, ' + app.getUserLocale() + ', number: ', number);
             app.ask(i18n(lang, 'sorry') + i18n(lang, 'start', {numDigits: DEFAULT_NUM_DEIGITS}));
             return;
         }
         const numDigits = context.parameters.numDigits;
         if (!isValidNumber(numDigits, number)) {
-            console.error(app.getUserLocale() + ' numDigits: ' + numDigits + ', number: ' + number);
+            console.error('numberHandler: Invalid number, ' + app.getUserLocale() + ', numDigits: ' + numDigits + ', number: ' + number);
             app.ask(i18n(lang, 'invalid', {numDigits: numDigits}));
             return;
         }
