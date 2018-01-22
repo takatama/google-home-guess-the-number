@@ -145,11 +145,13 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 .replace(/に/g, '2')
                 .replace(/二/g, '2')
                 .replace(/さん/g, '3')
+                .replace(/サン/g, '3')
                 .replace(/三/g, '3')
                 .replace(/c/g, '4')
                 .replace(/四/g, '4')
                 .replace(/号/g, '5')
-                .replace(/五/g, '5')　
+                .replace(/五/g, '5')
+                .replace(/ゴー/g, '5')
                 .replace(/六/g, '6')
                 .replace(/ろく/g, '6')
                 .replace(/ロック/g, '6')
@@ -159,6 +161,8 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
                 .replace(/はち/g, '8')
                 .replace(/九/g, '9')
                 .replace(/Q/g, '9')
+                .replace(/きゅう/g, '9')
+                .replace(/キュー/g, '9')
                 .replace(/級/g, '9');
         }
         return number.replace(/\s/g, '');
